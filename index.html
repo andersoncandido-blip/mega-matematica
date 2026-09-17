@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mega Matemática — Ensino Médio</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f3f4f6;color:#172033}
+main{max-width:850px;margin:auto;padding:20px}
+.card{background:white;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 2px 10px #0001}
+h1{margin:0 0 5px;font-size:28px} h2{margin:0 0 8px}
+.muted{color:#667085}
+input{width:100%;box-sizing:border-box;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:7px}
+.num{min-height:46px;border:1px solid #cbd5e1;border-radius:50%;background:white;font-weight:bold;font-size:15px;cursor:pointer}
+.num.selected{background:#dbeafe;border:3px solid #2563eb}
+.num.drawn{background:#e5e7eb}
+.num.hit{background:#16a34a;color:white;border-color:#16a34a}
+button.action{padding:13px 18px;border:0;border-radius:10px;font-weight:bold;cursor:pointer;margin:4px}
+.primary{background:#2563eb;color:white}.secondary{background:#e5e7eb;color:#172033}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{border:1px solid #e2e8f0;border-radius:10px;padding:12px}
+@media(max-width:520px){.grid{grid-template-columns:repeat(6,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main>
+<div class="card">
+<h1>🎯 Mega Matemática</h1>
+<div class="muted">Jogo de probabilidade e estatística para o Ensino Médio — sem dinheiro e sem apostas.</div>
+</div>
+
+<div class="card">
+<label><b>Nome do aluno</b></label>
+<input id="student" placeholder="Digite seu nome">
+</div>
+
+<div class="card">
+<div style="display:flex;justify-content:space-between;gap:10px">
+<b>Escolha 6 números de 1 a 60</b><b id="count">0/6</b>
+</div>
+<br>
+<div id="numbers" class="grid"></div>
+<br>
+<button id="draw" class="action primary">🎲 Sortear 6 números</button>
+<button id="next" class="action secondary" disabled>Próxima rodada</button>
+<button id="reset" class="action secondary">Recomeçar</button>
+</div>
+
+<div id="result" class="card">
+<h2>Resultado</h2>
+<div class="muted">Escolha seus números e faça o sorteio.</div>
+</div>
+
+<div id="question" class="card" style="display:none">
+<h2>🧮 Desafio de Matemática</h2>
+<p id="qtext"></p>
+<input id="answer" type="number" step="any" placeholder="Digite sua resposta em porcentagem">
+<button id="check" class="action primary">Verificar resposta</button>
+<p id="feedback"></p>
+</div>
+
+<div class="card">
+<h2>🏆 Pontuação</h2>
+<div class="stats">
+<div class="stat">6 acertos<br><b>100 pontos</b></div>
+<div class="stat">5 acertos<br><b>50 pontos</b></div>
+<div class="stat">4 acertos<br><b>25 pontos</b></div>
+<div class="stat">3 acertos<br><b>10 pontos</b></div>
+</div>
+</div>
+</main>
+
+<script>
+(function(){
+const numbers=document.getElementById("numbers"),count=document.getElementById("count");
+const result=document.getElementById("result"),question=document.getElementById("question");
+const qtext=document.getElementById("qtext"),answer=document.getElementById("answer"),feedback=document.getElementById("feedback");
+let selected=new Set(),drawn=new Set(),locked=false,round=1,total=0,correct=0;
+
+for(let i=1;i<=60;i++){
+ const b=document.createElement("button"); b.className="num"; b.textContent=i; b.type="button";
+ b.onclick=()=>{if(locked)return;if(selected.has(i))selected.delete(i);else if(selected.size<6)selected.add(i);update()};
+ numbers.appendChild(b);
+}
+function update(){
+ count.textContent=selected.size+"/6";
+ [...numbers.children].forEach(b=>{
+  const n=Number(b.textContent);
+  b.classList.toggle("selected",selected.has(n));
+  b.classList.toggle("drawn",drawn.has(n)&&!selected.has(n));
+  b.classList.toggle("hit",drawn.has(n)&&selected.has(n));
+ });
+}
+function combination(n,k){let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return r}
+
+document.getElementById("draw").onclick=()=>{
+ if(selected.size!==6){result.innerHTML="<h2>⚠️ Complete a aposta</h2><p>Escolha exatamente 6 números.</p>";return}
+ drawn.clear();while(drawn.size<6)drawn.add(Math.floor(Math.random()*60)+1);
+ const hits=[...selected].filter(n=>drawn.has(n)).length;
+ const points=hits===6?100:hits===5?50:hits===4?25:hits===3?10:0;
+ total+=points;locked=true;document.getElementById("next").disabled=false;
+ const name=document.getElementById("student").value.trim()||"Aluno";
+ result.innerHTML="<h2>🎉 "+name+"</h2><p><b>Rodada "+round+"</b></p><div style='font-size:24px;font-weight:bold'>"+[...drawn].sort((a,b)=>a-b).join(" • ")+"</div><p><b>"+hits+" acerto(s)</b> — "+points+" ponto(s) nesta rodada — <b>"+total+" ponto(s) no total</b></p>";
+ question.style.display="block";
+ if(round%2===1){qtext.textContent="Qual é a probabilidade aproximada de acertar os 6 números escolhidos? Digite em porcentagem.";correct=100/combination(60,6)}
+ else {qtext.textContent="Qual é a probabilidade de um número específico ser sorteado em uma rodada de 6 números entre 60? Digite em porcentagem.";correct=10}
+ feedback.textContent="";answer.value="";update();
+};
+document.getElementById("next").onclick=()=>{
+ round++;selected.clear();drawn.clear();locked=false;document.getElementById("next").disabled=true;
+ result.innerHTML="<h2>Nova rodada</h2><p>Escolha novamente 6 números.</p>";
+ question.style.display="none";update();
+};
+document.getElementById("reset").onclick=()=>{
+ round=1;total=0;selected.clear();drawn.clear();locked=false;document.getElementById("next").disabled=true;
+ result.innerHTML="<h2>Resultado</h2><p>Escolha seus números e faça o sorteio.</p>";
+ question.style.display="none";update();
+};
+document.getElementById("check").onclick=()=>{
+ const v=Number(answer.value);
+ if(!Number.isFinite(v)){feedback.textContent="Digite uma resposta válida.";return}
+ const tolerance=correct<1?correct*.08:.2;
+ feedback.textContent=Math.abs(v-correct)<=tolerance
+ ? "✅ Resposta correta!"
+ : "❌ Tente novamente. O valor esperado é aproximadamente "+correct.toFixed(correct<1?8:2)+"%.";
+};
+update();
+})();
+</script>
+</body>
+</html>
