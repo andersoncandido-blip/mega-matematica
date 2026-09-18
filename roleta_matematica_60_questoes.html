@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roleta da Matemática</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#10233f,#243b68);color:#fff;min-height:100vh}
+.container{max-width:900px;margin:auto;padding:20px}.card{background:#fff;color:#18243a;border-radius:22px;padding:22px;box-shadow:0 12px 35px #0005}
+h1{text-align:center;margin:5px 0 8px;font-size:34px}.sub{text-align:center;color:#5a6780;margin-bottom:18px}
+.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:15px}.badge{padding:10px 14px;border-radius:12px;background:#edf2f8;font-weight:bold}
+.wheelbox{display:flex;justify-content:center;align-items:center;margin:10px 0 18px;position:relative}
+.wheel{width:min(72vw,430px);height:min(72vw,430px);border-radius:50%;border:10px solid #fff;box-shadow:0 7px 20px #0004;display:flex;align-items:center;justify-content:center;background:conic-gradient(#ef5350 0 25%,#42a5f5 25% 50%,#66bb6a 50% 75%,#ab47bc 75% 100%);transition:transform 3.2s cubic-bezier(.12,.7,.2,1)}
+.wheel span{font-size:clamp(28px,7vw,50px);font-weight:900;color:white;text-shadow:2px 2px 5px #0008;text-align:center}
+.pointer{position:absolute;top:-2px;z-index:2;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:35px solid #222}
+button{border:0;border-radius:13px;padding:13px 18px;font-size:16px;font-weight:bold;cursor:pointer;background:#1d4ed8;color:#fff;margin:4px}
+button:hover{filter:brightness(1.08)}button:disabled{opacity:.5;cursor:not-allowed}.secondary{background:#64748b}
+.question{margin-top:15px;padding:20px;border-radius:16px;background:#f4f7fb}.question h2{font-size:21px;line-height:1.4}
+.answers{display:grid;gap:10px}.answer{background:#e8edf5;color:#18243a;text-align:left}.answer.correct{background:#86efac}.answer.wrong{background:#fca5a5}.feedback{font-weight:bold;min-height:24px;margin:10px 0}
+.hidden{display:none}.result{text-align:center;padding:18px;background:#eef6ff;border-radius:15px;margin-top:15px}.big{font-size:28px;font-weight:900}
+.progress{height:12px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin:10px 0}.bar{height:100%;width:0;background:#2563eb;transition:.3s}
+.footer{text-align:center;margin:14px;color:#d8e3f2;font-size:13px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="card">
+<h1>🎡 Roleta da Matemática</h1>
+<div class="sub">60 desafios de Matemática • 4 áreas de conhecimento</div>
+<div class="top">
+<div class="badge">🏆 Pontos: <span id="score">0</span></div>
+<div class="badge">❓ Questão: <span id="num">0</span>/60</div>
+<div class="badge">⏱️ Tempo: <span id="time">00:00</span></div>
+</div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="wheelbox">
+<div class="pointer"></div>
+<div class="wheel" id="wheel"><span id="wheelText">GIRE!</span></div>
+</div>
+<div style="text-align:center">
+<button id="spin" onclick="spin()">🎡 GIRAR A ROLETA</button>
+<button class="secondary" onclick="restart()">🔄 REINICIAR JOGO</button>
+</div>
+<div id="question" class="question hidden">
+<h2 id="qtext"></h2>
+<div class="answers" id="answers"></div>
+<div class="feedback" id="feedback"></div>
+<button id="next" class="hidden" onclick="nextQuestion()">➡️ PRÓXIMA</button>
+</div>
+<div id="result" class="result hidden"></div>
+</div>
+<div class="footer">Roleta da Matemática • Aritmética • Álgebra • Geometria Plana • Geometria Espacial</div>
+</div>
+<script>
+const questions = [{"tema": "Aritmética", "q": "Qual é o resultado de 25 + 37?", "a": ["52", "62", "72", "58"], "c": 1}, {"tema": "Aritmética", "q": "Qual é o resultado de 84 − 29?", "a": ["55", "65", "45", "53"], "c": 0}, {"tema": "Aritmética", "q": "Qual é o resultado de 12 × 8?", "a": ["86", "96", "108", "92"], "c": 1}, {"tema": "Aritmética", "q": "Qual é o resultado de 144 ÷ 12?", "a": ["10", "11", "12", "14"], "c": 2}, {"tema": "Aritmética", "q": "Quanto é 15% de 200?", "a": ["20", "25", "30", "35"], "c": 2}, {"tema": "Aritmética", "q": "Qual é o MMC de 6 e 8?", "a": ["12", "18", "24", "48"], "c": 2}, {"tema": "Aritmética", "q": "Qual é o MDC de 18 e 24?", "a": ["3", "6", "9", "12"], "c": 1}, {"tema": "Aritmética", "q": "Qual é o valor de 2³ + 5?", "a": ["11", "12", "13", "14"], "c": 2}, {"tema": "Aritmética", "q": "Qual é a raiz quadrada de 169?", "a": ["11", "12", "13", "14"], "c": 2}, {"tema": "Aritmética", "q": "Uma camisa custa R$ 80,00 e recebe desconto de 25%. Qual é o novo preço?", "a": ["R$ 55,00", "R$ 60,00", "R$ 65,00", "R$ 70,00"], "c": 1}, {"tema": "Aritmética", "q": "Qual fração é equivalente a 3/4?", "a": ["6/8", "5/8", "8/12", "9/16"], "c": 0}, {"tema": "Aritmética", "q": "Qual é o resultado de 3/5 + 1/5?", "a": ["4/10", "4/5", "3/5", "1"], "c": 1}, {"tema": "Aritmética", "q": "Qual é o número decimal correspondente a 3/4?", "a": ["0,25", "0,50", "0,75", "1,25"], "c": 2}, {"tema": "Aritmética", "q": "Se 5 cadernos custam R$ 40,00, quanto custam 8 cadernos pelo mesmo preço unitário?", "a": ["R$ 56,00", "R$ 60,00", "R$ 64,00", "R$ 72,00"], "c": 2}, {"tema": "Aritmética", "q": "Um produto de R$ 150,00 teve aumento de 10%. Qual passou a ser seu preço?", "a": ["R$ 155,00", "R$ 160,00", "R$ 165,00", "R$ 175,00"], "c": 2}, {"tema": "Álgebra", "q": "Qual é o valor de x na equação x + 7 = 15?", "a": ["6", "7", "8", "9"], "c": 2}, {"tema": "Álgebra", "q": "Qual é o valor de x em 3x = 27?", "a": ["6", "7", "8", "9"], "c": 3}, {"tema": "Álgebra", "q": "Resolva: 2x + 5 = 17.", "a": ["5", "6", "7", "8"], "c": 1}, {"tema": "Álgebra", "q": "Qual é o valor de x em 5x − 10 = 20?", "a": ["4", "5", "6", "7"], "c": 2}, {"tema": "Álgebra", "q": "Simplifique: 3x + 5x − 2x.", "a": ["5x", "6x", "7x", "8x"], "c": 1}, {"tema": "Álgebra", "q": "Qual é o resultado de (x + 3)(x + 2)?", "a": ["x² + 5x + 6", "x² + 6x + 5", "x² + 3x + 6", "x² + 5"], "c": 0}, {"tema": "Álgebra", "q": "Na função f(x) = 2x + 3, qual é f(4)?", "a": ["9", "10", "11", "12"], "c": 2}, {"tema": "Álgebra", "q": "Qual é a raiz da função f(x) = x − 5?", "a": ["−5", "0", "5", "10"], "c": 2}, {"tema": "Álgebra", "q": "Qual é o coeficiente angular da função y = 4x − 2?", "a": ["−2", "2", "4", "6"], "c": 2}, {"tema": "Álgebra", "q": "Resolva: x/4 = 6.", "a": ["18", "20", "24", "28"], "c": 2}, {"tema": "Álgebra", "q": "Qual é o valor de x em 2(x + 3) = 18?", "a": ["5", "6", "7", "8"], "c": 0}, {"tema": "Álgebra", "q": "Qual é o resultado de x² para x = −4?", "a": ["−16", "−8", "8", "16"], "c": 3}, {"tema": "Álgebra", "q": "As raízes de x² − 9 = 0 são:", "a": ["0 e 9", "−3 e 3", "−9 e 9", "1 e 9"], "c": 1}, {"tema": "Álgebra", "q": "Qual é o discriminante de x² + 2x + 1 = 0?", "a": ["0", "1", "2", "4"], "c": 0}, {"tema": "Álgebra", "q": "Se 2x + y = 10 e x = 3, qual é o valor de y?", "a": ["3", "4", "5", "6"], "c": 1}, {"tema": "Geometria Plana", "q": "Qual é a área de um quadrado de lado 6 cm?", "a": ["24 cm²", "30 cm²", "36 cm²", "42 cm²"], "c": 2}, {"tema": "Geometria Plana", "q": "Qual é o perímetro de um quadrado de lado 9 cm?", "a": ["18 cm", "27 cm", "36 cm", "81 cm"], "c": 2}, {"tema": "Geometria Plana", "q": "Qual é a área de um retângulo de 8 cm por 5 cm?", "a": ["13 cm²", "26 cm²", "40 cm²", "80 cm²"], "c": 2}, {"tema": "Geometria Plana", "q": "Um triângulo tem base 10 cm e altura 6 cm. Qual é sua área?", "a": ["30 cm²", "60 cm²", "16 cm²", "36 cm²"], "c": 0}, {"tema": "Geometria Plana", "q": "Qual é a soma dos ângulos internos de um triângulo?", "a": ["90°", "180°", "270°", "360°"], "c": 1}, {"tema": "Geometria Plana", "q": "Um ângulo de 90° é chamado de:", "a": ["agudo", "obtuso", "reto", "raso"], "c": 2}, {"tema": "Geometria Plana", "q": "Qual é a área de um círculo de raio 5 cm, usando π = 3,14?", "a": ["31,4 cm²", "62,8 cm²", "78,5 cm²", "157 cm²"], "c": 2}, {"tema": "Geometria Plana", "q": "Qual é o comprimento de uma circunferência de raio 4 cm, usando π = 3,14?", "a": ["12,56 cm", "25,12 cm", "50,24 cm", "16 cm"], "c": 1}, {"tema": "Geometria Plana", "q": "Um quadrilátero possui quantos lados?", "a": ["3", "4", "5", "6"], "c": 1}, {"tema": "Geometria Plana", "q": "Qual é a área de um paralelogramo com base 12 cm e altura 5 cm?", "a": ["17 cm²", "30 cm²", "60 cm²", "120 cm²"], "c": 2}, {"tema": "Geometria Plana", "q": "Qual é a área de um trapézio com bases 8 cm e 12 cm e altura 5 cm?", "a": ["40 cm²", "50 cm²", "60 cm²", "100 cm²"], "c": 1}, {"tema": "Geometria Plana", "q": "Qual é a medida de cada ângulo interno de um quadrado?", "a": ["45°", "60°", "90°", "120°"], "c": 2}, {"tema": "Geometria Plana", "q": "Um triângulo com três lados iguais é chamado de:", "a": ["escaleno", "isósceles", "equilátero", "retângulo"], "c": 2}, {"tema": "Geometria Plana", "q": "Pelo Teorema de Pitágoras, em um triângulo retângulo com catetos 3 e 4, a hipotenusa mede:", "a": ["5", "6", "7", "8"], "c": 0}, {"tema": "Geometria Plana", "q": "Qual é o perímetro de um retângulo de 7 cm por 3 cm?", "a": ["10 cm", "14 cm", "20 cm", "21 cm"], "c": 2}, {"tema": "Geometria Espacial", "q": "Qual é o volume de um cubo de aresta 4 cm?", "a": ["16 cm³", "32 cm³", "64 cm³", "128 cm³"], "c": 2}, {"tema": "Geometria Espacial", "q": "Qual é o volume de um paralelepípedo de dimensões 5 cm, 3 cm e 2 cm?", "a": ["10 cm³", "20 cm³", "30 cm³", "60 cm³"], "c": 2}, {"tema": "Geometria Espacial", "q": "Um cubo possui quantas faces?", "a": ["4", "6", "8", "12"], "c": 1}, {"tema": "Geometria Espacial", "q": "Um cubo possui quantas arestas?", "a": ["6", "8", "10", "12"], "c": 3}, {"tema": "Geometria Espacial", "q": "Um cubo possui quantos vértices?", "a": ["6", "8", "10", "12"], "c": 1}, {"tema": "Geometria Espacial", "q": "Qual é o volume de um cilindro de raio 2 cm e altura 5 cm, usando π = 3,14?", "a": ["31,4 cm³", "62,8 cm³", "78,5 cm³", "125,6 cm³"], "c": 1}, {"tema": "Geometria Espacial", "q": "Qual é o volume de uma esfera de raio 3 cm, usando π = 3,14?", "a": ["28,26 cm³", "84,78 cm³", "113,04 cm³", "226,08 cm³"], "c": 2}, {"tema": "Geometria Espacial", "q": "Qual é o volume de um cone com raio 3 cm e altura 4 cm, usando π = 3,14?", "a": ["28,26 cm³", "37,68 cm³", "56,52 cm³", "113,04 cm³"], "c": 2}, {"tema": "Geometria Espacial", "q": "Quantas faces triangulares possui uma pirâmide de base quadrada?", "a": ["2", "3", "4", "5"], "c": 2}, {"tema": "Geometria Espacial", "q": "Qual sólido possui duas bases circulares paralelas?", "a": ["cone", "esfera", "cilindro", "pirâmide"], "c": 2}, {"tema": "Geometria Espacial", "q": "Qual sólido possui uma base circular e um único vértice?", "a": ["cone", "cilindro", "prisma", "cubo"], "c": 0}, {"tema": "Geometria Espacial", "q": "Um prisma triangular possui quantas faces?", "a": ["3", "4", "5", "6"], "c": 2}, {"tema": "Geometria Espacial", "q": "Qual é a fórmula do volume de um cilindro?", "a": ["V = 2πr", "V = πr²h", "V = πr³", "V = r²h/3"], "c": 1}, {"tema": "Geometria Espacial", "q": "Qual é a fórmula do volume de uma esfera?", "a": ["V = πr²", "V = 2πr", "V = 4πr³/3", "V = πr²h"], "c": 2}, {"tema": "Geometria Espacial", "q": "Se a aresta de um cubo dobrar, seu volume ficará:", "a": ["2 vezes maior", "4 vezes maior", "6 vezes maior", "8 vezes maior"], "c": 3}];
+let pool=[], current=null, score=0, num=0, answered=false, rotation=0, startTime=Date.now(), timer;
+const wheel=document.getElementById('wheel');
+function shuffle(a){return a.sort(()=>Math.random()-0.5)}
+function init(){pool=shuffle([...questions]); score=0;num=0;answered=false;startTime=Date.now();clearInterval(timer);timer=setInterval(updateTime,1000);document.getElementById('score').textContent=0;document.getElementById('num').textContent=0;document.getElementById('bar').style.width='0%';document.getElementById('question').classList.add('hidden');document.getElementById('result').classList.add('hidden');document.getElementById('spin').disabled=false;document.getElementById('wheelText').textContent='GIRE!'}
+function updateTime(){let s=Math.floor((Date.now()-startTime)/1000);let m=Math.floor(s/60);s%=60;document.getElementById('time').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function spin(){
+ if(!pool.length){finish();return}
+ document.getElementById('spin').disabled=true; answered=false;
+ const idx=Math.floor(Math.random()*pool.length); current=pool.splice(idx,1)[0];
+ const sector={'Aritmética':'ARITMÉTICA','Álgebra':'ÁLGEBRA','Geometria Plana':'GEOMETRIA PLANA','Geometria Espacial':'GEOMETRIA ESPACIAL'}[current.tema];
+ document.getElementById('wheelText').textContent=sector;
+ rotation += 1440 + Math.floor(Math.random()*360);
+ wheel.style.transform=`rotate(${rotation}deg)`;
+ setTimeout(showQuestion,3300);
+}
+function showQuestion(){
+ num++;document.getElementById('num').textContent=num;document.getElementById('bar').style.width=(num/60*100)+'%';
+ document.getElementById('qtext').textContent=current.q;document.getElementById('feedback').textContent='';
+ const box=document.getElementById('answers');box.innerHTML='';
+ current.a.forEach((x,i)=>{let b=document.createElement('button');b.className='answer';b.textContent=String.fromCharCode(65+i)+') '+x;b.onclick=()=>answer(i,b);box.appendChild(b)});
+ document.getElementById('next').classList.add('hidden');document.getElementById('question').classList.remove('hidden');
+}
+function answer(i,btn){
+ if(answered)return;answered=true;
+ const bs=[...document.querySelectorAll('.answer')];bs.forEach(b=>b.disabled=true);
+ if(i===current.c){score+=10;btn.classList.add('correct');document.getElementById('feedback').textContent='✅ Correto! +10 pontos';}
+ else{btn.classList.add('wrong');bs[current.c].classList.add('correct');document.getElementById('feedback').textContent='❌ Incorreto. A resposta correta está destacada.'}
+ document.getElementById('score').textContent=score;
+ document.getElementById('next').textContent=num===60?'🏆 VER RESULTADO':'➡️ PRÓXIMA';
+ document.getElementById('next').classList.remove('hidden');
+}
+function nextQuestion(){document.getElementById('question').classList.add('hidden');document.getElementById('spin').disabled=false;if(num>=60)finish()}
+function finish(){clearInterval(timer);document.getElementById('spin').disabled=true;document.getElementById('result').innerHTML='<div class="big">🏆 Fim do jogo!</div><p>Você fez <b>'+score+'</b> pontos de 600.</p><p>Acertos: <b>'+Math.round(score/10)+'</b> de 60.</p><button onclick="restart()">🔄 JOGAR NOVAMENTE</button>';document.getElementById('result').classList.remove('hidden')}
+function restart(){location.reload()}
+init();
+</script>
+</body>
+</html>
